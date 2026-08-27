@@ -1,0 +1,71 @@
+# Fast functional test, not a paper-quality setting. It deliberately uses
+# CIFAR-100 itself as a proxy source so the pipeline can be exercised without a
+# separately collected proxy ImageFolder.
+experiment:
+  seed: 0
+  device: auto
+  output_dir: outputs/smoke_cifar10
+
+dataset:
+  name: cifar10
+  root: ./data
+  download: true
+  image_size: 32
+  num_tasks: 2
+  class_order: null
+  target_original_class: airplane
+victim:
+  model: resnet18
+  memory_size: 100
+  train:
+    epochs: 1
+    batch_size: 64
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+    nesterov: true
+    scheduler: none
+    num_workers: 0
+    herding_batch_size: 128
+    herding_max_candidates: 100
+attack: {poison_task: 0, poison_rate: 0.05}
+proxy:
+  source: cifar100
+  root: ./data
+  download: true
+  image_size: 32
+  target_class: apple
+  class_order: null
+  num_tasks: 2
+  classes_per_task: 5
+  samples_per_class: 50
+  memory_size: 100
+  model: resnet18
+  train:
+    epochs: 1
+    batch_size: 64
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+    nesterov: true
+    scheduler: none
+    num_workers: 0
+    herding_batch_size: 128
+    herding_max_candidates: 50
+trigger:
+  epsilon: 0.03137254901960784
+  steps: 2
+  step_size: 0.00392156862745098
+  batch_size: 16
+  num_workers: 0
+  init: uniform
+  lambda_align: 1.0
+  anchor_layers: [layer2]
+  normalize_gram: true
+  gram_reduction: mean
+  reference_mode: mean_gram
+  reference_samples: 16
+  trajectory_mode: all
+  checkpoints_per_step: all
+refinement: {enabled: false, max_rounds: 0, min_rounds: 0, asr_threshold: 0.95, tolerance: 0.001}
+evaluation: {inference: logits, batch_size: 128, num_workers: 0}

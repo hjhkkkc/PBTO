@@ -1,0 +1,27 @@
+experiment:
+  seed: 0
+  device: auto
+  output_dir: outputs/clean_cifar100_seed0
+dataset:
+  name: cifar100
+  root: ./data
+  download: true
+  image_size: 32
+  num_tasks: 10
+  class_order: null
+victim:
+  model: resnet18
+  memory_size: 2000
+  train:
+    epochs: 70
+    batch_size: 128
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+    nesterov: true
+    scheduler: multistep
+    milestones: [49, 63]
+    gamma: 0.1
+    num_workers: 4
+    herding_batch_size: 256
+evaluation: {inference: nme, batch_size: 256, num_workers: 4}

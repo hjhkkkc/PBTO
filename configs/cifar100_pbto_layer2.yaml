@@ -1,0 +1,51 @@
+# Alternative anchor-layer setting motivated by Table 1's stronger stability in Module 2.
+# This file inherits conceptually from cifar100_pbto_paper_candidate.yaml; run it
+# by passing the main config and --set trigger.anchor_layers='[layer2]'.
+experiment:
+  seed: 0
+  device: auto
+  output_dir: outputs/cifar100_pbto_layer2_seed0
+
+dataset:
+  name: cifar100
+  root: ./data
+  download: true
+  image_size: 32
+  num_tasks: 10
+  class_order: null
+  target_original_class: apple
+victim:
+  model: resnet18
+  memory_size: 2000
+  train: {epochs: 70, batch_size: 128, lr: 0.01, momentum: 0.9, weight_decay: 0.0005, nesterov: true, scheduler: multistep, milestones: [49, 63], gamma: 0.1, num_workers: 4, herding_batch_size: 256}
+attack: {poison_task: 0, poison_rate: 0.05}
+proxy:
+  source: imagefolder
+  root: ./proxy_data/cifar100
+  download: false
+  image_size: 32
+  target_class: apple
+  class_order: null
+  num_tasks: 5
+  classes_per_task: 5
+  samples_per_class: 5000
+  memory_size: 2000
+  model: resnet18
+  train: {epochs: 70, batch_size: 128, lr: 0.01, momentum: 0.9, weight_decay: 0.0005, nesterov: true, scheduler: multistep, milestones: [49, 63], gamma: 0.1, num_workers: 4, herding_batch_size: 256}
+trigger:
+  epsilon: 0.03137254901960784
+  steps: 200
+  step_size: 0.00392156862745098
+  batch_size: 64
+  num_workers: 4
+  init: uniform
+  lambda_align: 1.0
+  anchor_layers: [layer2]
+  normalize_gram: true
+  gram_reduction: mean
+  reference_mode: mean_gram
+  reference_samples: 128
+  trajectory_mode: all
+  checkpoints_per_step: all
+refinement: {enabled: true, max_rounds: 60, min_rounds: 2, asr_threshold: 0.95, tolerance: 0.001, keep_poisoned_trajectories: false}
+evaluation: {inference: nme, batch_size: 256, num_workers: 4}

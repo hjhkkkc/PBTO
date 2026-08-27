@@ -1,0 +1,97 @@
+# Best-effort configuration inferred from the paper.
+# Values explicitly absent from the paper (epochs, PGD steps/step size, stopping
+# constants and exact proxy classes) are marked in README.md and should be swept.
+experiment:
+  seed: 0
+  device: auto
+  output_dir: outputs/cifar100_pbto_seed0
+
+dataset:
+  name: cifar100
+  root: ./data
+  download: true
+  image_size: 32
+  num_tasks: 10
+  class_order: null
+  # The target class is moved into the first position of Task 1, making its
+  # incremental label 0. Any CIFAR-100 class name or integer id is accepted.
+  target_original_class: apple
+
+victim:
+  model: resnet18
+  memory_size: 2000
+  train:
+    epochs: 70               # paper does not report epochs
+    batch_size: 128
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+    nesterov: true
+    scheduler: multistep
+    milestones: [49, 63]
+    gamma: 0.1
+    num_workers: 4
+    herding_batch_size: 256
+    herding_max_candidates: null
+
+attack:
+  poison_task: 0
+  poison_rate: 0.05
+
+proxy:
+  # Expected layout: proxy_data/cifar100/<class_name>/*.jpg, or
+  # proxy_data/cifar100/train/<class_name>/*.jpg plus val/<class_name>/*.jpg.
+  source: imagefolder
+  root: ./proxy_data/cifar100
+  download: false
+  image_size: 32
+  target_class: apple
+  class_order: null          # exact proxy classes/queries are not disclosed
+  num_tasks: 5
+  classes_per_task: 5
+  samples_per_class: 5000
+  memory_size: 2000
+  model: resnet18
+  train:
+    epochs: 70               # paper does not report epochs
+    batch_size: 128
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+    nesterov: true
+    scheduler: multistep
+    milestones: [49, 63]
+    gamma: 0.1
+    num_workers: 4
+    herding_batch_size: 256
+
+trigger:
+  epsilon: 0.03137254901960784  # 8/255, explicitly reported
+  steps: 200                    # not reported; sweep 50/100/200
+  step_size: 0.00392156862745098 # 1/255, not reported
+  batch_size: 64
+  num_workers: 4
+  init: uniform
+  lambda_align: 1.0             # explicitly reported
+  # Literal interpretation of "penultimate residual block/stage". Because the
+  # paper's stability table favors shallower stages, also sweep layer2.
+  anchor_layers: [layer3]
+  normalize_gram: true
+  gram_reduction: mean
+  reference_mode: mean_gram
+  reference_samples: 128
+  trajectory_mode: all
+  checkpoints_per_step: all
+
+refinement:
+  enabled: true
+  max_rounds: 60              # plot reports saturation near 50; exact Tmax absent
+  min_rounds: 2
+  asr_threshold: 0.95         # tau not reported
+  tolerance: 0.001            # epsilon stopping tolerance not reported
+  keep_poisoned_trajectories: false
+
+evaluation:
+  inference: nme
+  batch_size: 256
+  num_workers: 4
